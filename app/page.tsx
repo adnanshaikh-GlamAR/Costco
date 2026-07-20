@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const productSpecs = [
   { value: "0.50", label: "CTW", icon: "carat" },
@@ -71,6 +71,16 @@ const productImagesByMetal: Record<MetalKey, typeof yellowGoldImages> = {
   yellow: yellowGoldImages,
   white: whiteGoldImages,
 };
+
+function getMediaForMetal(metal: MetalKey, currentMedia: MediaKey) {
+  if (!currentMedia.startsWith("image-")) {
+    return currentMedia;
+  }
+
+  const currentIndex = Number(currentMedia.replace("image-", ""));
+
+  return currentIndex < productImagesByMetal[metal].length ? currentMedia : "image-0";
+}
 
 const productVideo = {
   label: "Diamond band product video",
@@ -270,22 +280,44 @@ function SpecIcon({ type }: { type: string }) {
 
 export default function Home() {
   const [selectedMetal, setSelectedMetal] = useState<MetalKey>("yellow");
-  const [selectedMedia, setSelectedMedia] = useState<MediaKey>("360");
+  const [selectedMedia, setSelectedMedia] = useState<MediaKey>("image-0");
+  const viewerFrameRef = useRef<HTMLIFrameElement>(null);
   const productImages = productImagesByMetal[selectedMetal];
   const selectedMetalLabel = metalOptions.find((metal) => metal.key === selectedMetal)?.name;
 
   function handleMetalChange(metal: MetalKey) {
     setSelectedMetal(metal);
-    setSelectedMedia((currentMedia) => {
-      if (!currentMedia.startsWith("image-")) {
-        return currentMedia;
+    setSelectedMedia((currentMedia) => getMediaForMetal(metal, currentMedia));
+  }
+
+  useEffect(() => {
+    function handleViewerMessage(event: MessageEvent) {
+      const viewerWindow = viewerFrameRef.current?.contentWindow;
+      const isViewerMessage =
+        event.origin === window.location.origin || (!!viewerWindow && event.source === viewerWindow);
+
+      if (!isViewerMessage || !event.data) {
+        return;
       }
 
-      const currentIndex = Number(currentMedia.replace("image-", ""));
+      const data = event.data as { metal?: unknown; type?: unknown };
 
-      return currentIndex < productImagesByMetal[metal].length ? currentMedia : "image-0";
-    });
-  }
+      if (data.type !== "costco:metal-change") {
+        return;
+      }
+
+      if (data.metal !== "yellow" && data.metal !== "white") {
+        return;
+      }
+
+      setSelectedMetal(data.metal);
+      setSelectedMedia((currentMedia) => getMediaForMetal(data.metal, currentMedia));
+    }
+
+    window.addEventListener("message", handleViewerMessage);
+
+    return () => window.removeEventListener("message", handleViewerMessage);
+  }, []);
 
   return (
     <main className="site-shell">
@@ -409,6 +441,7 @@ export default function Home() {
                   title="iJewel 3D ring viewer"
                   allow="fullscreen; xr-spatial-tracking; gyroscope; accelerometer"
                   referrerPolicy="strict-origin-when-cross-origin"
+                  ref={viewerFrameRef}
                 />
               </div>
             </div>

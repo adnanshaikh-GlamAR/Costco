@@ -60,9 +60,10 @@ test("server-renders the Costco PDP with the iJewel viewer iframe", async () => 
   assert.match(html, /data-media-key="video"/);
   assert.match(html, /data-media-key="360"/);
   assert.match(html, /data-metal-option="white"/);
-  assert.match(html, /media-panel media-panel-image-0/);
+  assert.match(html, /media-panel media-panel-image-0 is-active/);
   assert.match(html, /media-panel media-panel-video/);
-  assert.match(html, /media-panel media-panel-360 is-active/);
+  assert.match(html, /media-panel media-panel-360/);
+  assert.doesNotMatch(html, /media-panel media-panel-360 is-active/);
   for (const imagePath of pdpImagePaths) {
     assert.match(html, new RegExp(imagePath.replace(/\./g, "\\.")));
   }
@@ -122,12 +123,33 @@ test("uses iJewel runtime assets instead of the removed custom model viewer", as
   assert.doesNotMatch(viewerRoute, /costco-wholesale-logo-wide\.png/);
   assert.match(viewerRoute, /data-costco-configurator/);
   assert.match(viewerRoute, /replaceChildren\(buildConfiguratorLogo\(\)\)/);
+  assert.match(viewerRoute, /didAutoOpenConfigurator/);
+  assert.match(viewerRoute, /openConfiguratorByDefault/);
+  assert.match(viewerRoute, /button\.click\(\)/);
+  assert.match(viewerRoute, /syncConfiguratorUi/);
+  assert.match(viewerRoute, /postMetalSelection/);
+  assert.match(viewerRoute, /postMessage\(\{ type: "costco:metal-change", metal \}, "\*"\)/);
+  assert.match(viewerRoute, /bindMetalOptionImages/);
+  assert.match(viewerRoute, /data-costco-metal-option/);
+  assert.match(viewerRoute, /pointerup/);
+  assert.match(viewerRoute, /composedPath/);
+  assert.match(viewerRoute, /shadowRoot/);
+  assert.match(viewerRoute, /observe\(document\.body/);
+  assert.match(viewerRoute, /costco:metal-change/);
+  assert.match(viewerRoute, /silver/);
+  assert.match(viewerRoute, /yellowgold/);
   assert.match(viewerRoute, /bundle\.nowebgi\.iife\.js/);
   assert.match(viewerRoute, /bundle-0\.22\.0\.js/);
   assert.doesNotMatch(viewerRoute, /Loading iJewel 3D viewer/);
   assert.match(page, /src="ijewel-viewer\/"/);
   assert.match(page, /name="details-tab"/);
   assert.match(page, /useState<MetalKey>\("yellow"\)/);
+  assert.match(page, /useState<MediaKey>\("image-0"\)/);
+  assert.match(page, /viewerFrameRef/);
+  assert.match(page, /handleViewerMessage/);
+  assert.match(page, /costco:metal-change/);
+  assert.match(page, /event\.source === viewerWindow/);
+  assert.match(page, /getMediaForMetal\(data\.metal, currentMedia\)/);
   assert.match(page, /const whiteGoldImages = \[/);
   for (const imagePath of whiteGoldImagePaths) {
     assert.match(page, new RegExp(imagePath.replace(/\./g, "\\.")));
