@@ -174,35 +174,11 @@ function renderViewerDocument(payload: ReturnType<typeof buildViewerPayload>) {
         visibility: hidden;
       }
 
-      .glamar-loader__mark {
-        border: 2px solid rgba(0, 102, 177, 0.16);
-        border-top-color: #0066b3;
-        border-right-color: #e31837;
-        border-radius: 50%;
-        height: 52px;
-        position: relative;
-        width: 52px;
-        animation: glamar-spin 900ms linear infinite;
-      }
-
-      .glamar-loader__mark::after {
-        background: linear-gradient(135deg, #0066b3, #e31837);
-        border-radius: 50%;
-        content: "";
-        height: 10px;
-        left: 50%;
-        position: absolute;
-        top: -6px;
-        transform: translateX(-50%);
-        width: 10px;
-      }
-
-      .glamar-loader__brand {
-        color: #0066b3;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
+      .glamar-loader__logo {
+        display: block;
+        height: auto;
+        max-width: 72%;
+        width: 220px;
       }
 
       .glamar-loader__text {
@@ -321,8 +297,7 @@ function renderViewerDocument(payload: ReturnType<typeof buildViewerPayload>) {
     <div id="viewer-root">
       <div id="webgi-canvas-container" tabindex="0"></div>
       <div class="glamar-loader" id="viewer-status" role="status" aria-live="polite">
-        <span class="glamar-loader__mark" aria-hidden="true"></span>
-        <span class="glamar-loader__brand">Fynd GlamAR</span>
+        <img class="glamar-loader__logo" src="../assets/brand/fynd-glamar-loader.png" alt="Fynd GlamAR" />
         <span class="glamar-loader__text">Loading 3D experience</span>
         <span class="glamar-loader__bar" aria-hidden="true"></span>
       </div>
@@ -692,7 +667,7 @@ function renderViewerDocument(payload: ReturnType<typeof buildViewerPayload>) {
           window.setTimeout(() => window.clearInterval(configuratorLogoInterval), 8000);
         } catch (error) {
           console.error(error);
-          statusEl.innerHTML = '<span class="glamar-loader__brand">Fynd GlamAR</span><span class="glamar-loader__text">3D viewer unavailable</span>';
+          statusEl.innerHTML = '<img class="glamar-loader__logo" src="../assets/brand/fynd-glamar-loader.png" alt="Fynd GlamAR"><span class="glamar-loader__text">3D viewer unavailable</span>';
         }
       }
 

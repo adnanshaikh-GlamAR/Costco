@@ -20,6 +20,7 @@ const whiteGoldImagePaths = [
 ];
 const pdpVideoPath = "assets/images/pdp/costco-diamond-band-video.mp4";
 const configuratorIconPath = "assets/icons/configurator-gear.png";
+const loaderLogoPath = "assets/brand/fynd-glamar-loader.png";
 
 async function render(pathname = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -95,7 +96,7 @@ test("server-renders the Costco PDP with the iJewel viewer iframe", async () => 
   assert.doesNotMatch(html, /panel-rule/);
 
   await Promise.all(
-    [...pdpImagePaths, ...whiteGoldImagePaths, pdpVideoPath, configuratorIconPath].map((mediaPath) =>
+    [...pdpImagePaths, ...whiteGoldImagePaths, pdpVideoPath, configuratorIconPath, loaderLogoPath].map((mediaPath) =>
       access(new URL(`../public/${mediaPath}`, import.meta.url)),
     ),
   );
@@ -113,6 +114,8 @@ test("uses iJewel runtime assets instead of the removed custom model viewer", as
   assert.match(viewerRoute, /https:\/\/ijewel\.design\/profile\/social_1\/9724b59/);
   assert.match(viewerRoute, /window\.ijewelViewer/);
   assert.match(viewerRoute, /Fynd GlamAR/);
+  assert.match(viewerRoute, /glamar-loader__logo/);
+  assert.match(viewerRoute, /fynd-glamar-loader\.png/);
   assert.match(viewerRoute, /showLoadingScreenLogo:\s*false/);
   assert.match(viewerRoute, /showConfigurator:\s*true/);
   assert.doesNotMatch(viewerRoute, /viewer-360-indicator/);
@@ -141,6 +144,7 @@ test("uses iJewel runtime assets instead of the removed custom model viewer", as
   assert.match(viewerRoute, /bundle\.nowebgi\.iife\.js/);
   assert.match(viewerRoute, /bundle-0\.22\.0\.js/);
   assert.doesNotMatch(viewerRoute, /Loading iJewel 3D viewer/);
+  assert.doesNotMatch(viewerRoute, /glamar-loader__mark/);
   assert.match(page, /src="ijewel-viewer\/"/);
   assert.match(page, /name="details-tab"/);
   assert.match(page, /useState<MetalKey>\("yellow"\)/);
