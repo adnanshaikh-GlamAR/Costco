@@ -1,0 +1,150 @@
+import assert from "node:assert/strict";
+import { access, readFile } from "node:fs/promises";
+import test from "node:test";
+
+const projectRoot = new URL("../", import.meta.url);
+const pdpImagePaths = [
+  "assets/images/pdp/costco-diamond-band-hero.png",
+  "assets/images/pdp/costco-diamond-band-front.png",
+  "assets/images/pdp/costco-diamond-band-hand.png",
+  "assets/images/pdp/costco-diamond-band-closeup.png",
+  "assets/images/pdp/costco-diamond-band-side.jpeg",
+  "assets/images/pdp/costco-diamond-band-measurements.jpeg",
+];
+const whiteGoldImagePaths = [
+  "assets/images/pdp/costco-diamond-band-white-01.png",
+  "assets/images/pdp/costco-diamond-band-white-02.png",
+  "assets/images/pdp/costco-diamond-band-white-03.png",
+  "assets/images/pdp/costco-diamond-band-white-04.png",
+  "assets/images/pdp/costco-diamond-band-white-05.png",
+];
+const pdpVideoPath = "assets/images/pdp/costco-diamond-band-video.mp4";
+const configuratorIconPath = "assets/icons/configurator-gear.png";
+
+async function render(pathname = "/") {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+
+  return worker.fetch(
+    new Request(`http://localhost${pathname}`, {
+      headers: { accept: "text/html" },
+    }),
+    {
+      ASSETS: {
+        fetch: async () => new Response("Not found", { status: 404 }),
+      },
+    },
+    {
+      waitUntil() {},
+      passThroughOnException() {},
+    },
+  );
+}
+
+test("server-renders the Costco PDP with the iJewel viewer iframe", async () => {
+  const response = await render();
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+
+  const html = await response.text();
+  assert.match(html, /<title>Costco Jewelry PDP<\/title>/i);
+  assert.match(html, /Costco Wholesale/);
+  assert.match(html, /Round Brilliant 0\.50 CTW Diamond 14kt Gold Ring/);
+  assert.match(html, /id="details-tab-product"/);
+  assert.match(html, /for="details-tab-specifications"/);
+  assert.match(html, /details-panel product-details-panel/);
+  assert.match(html, /details-panel specifications-panel/);
+  assert.match(html, /details-panel shipping-panel/);
+  assert.match(html, /data-media-key="image-0"/);
+  assert.match(html, /data-media-key="video"/);
+  assert.match(html, /data-media-key="360"/);
+  assert.match(html, /data-metal-option="white"/);
+  assert.match(html, /media-panel media-panel-image-0/);
+  assert.match(html, /media-panel media-panel-video/);
+  assert.match(html, /media-panel media-panel-360 is-active/);
+  for (const imagePath of pdpImagePaths) {
+    assert.match(html, new RegExp(imagePath.replace(/\./g, "\\.")));
+  }
+  assert.match(html, new RegExp(pdpVideoPath.replace(/\./g, "\\.")));
+  assert.ok(
+    html.indexOf("assets/images/pdp/costco-diamond-band-measurements.jpeg") <
+      html.indexOf(pdpVideoPath),
+  );
+  assert.ok(
+    html.indexOf(pdpVideoPath) <
+      html.indexOf('aria-label="360 view"'),
+  );
+  assert.match(html, /video-thumb/);
+  assert.match(html, /view-360-thumb/);
+  assert.doesNotMatch(html, /Gem Color/);
+  assert.doesNotMatch(html, /gem-swatch/);
+  assert.match(html, /Birthstone Month/);
+  assert.match(html, /April Birthstone/);
+  assert.match(html, /Warehouse Pick-up/);
+  assert.match(html, /Air shipping via UPS insured is included in the quoted price/);
+  assert.match(html, /approximately 2-3 business days from the time of order/);
+  assert.match(html, /Great everyday band/);
+  assert.match(html, /Excellent value/);
+  assert.match(html, /Arrived ready to gift/);
+  assert.match(html, /src="ijewel-viewer\/"/);
+  assert.match(html, /title="iJewel 3D ring viewer"/);
+  assert.doesNotMatch(html, /custom interactive 3D model viewer/i);
+  assert.doesNotMatch(html, /Warranty/);
+  assert.doesNotMatch(html, /panel-rule/);
+
+  await Promise.all(
+    [...pdpImagePaths, ...whiteGoldImagePaths, pdpVideoPath, configuratorIconPath].map((mediaPath) =>
+      access(new URL(`../public/${mediaPath}`, import.meta.url)),
+    ),
+  );
+});
+
+test("uses iJewel runtime assets instead of the removed custom model viewer", async () => {
+  const [viewerRoute, page, layout, globals, packageJson] = await Promise.all([
+    readFile(new URL("../app/ijewel-viewer/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(viewerRoute, /https:\/\/ijewel\.design\/profile\/social_1\/9724b59/);
+  assert.match(viewerRoute, /window\.ijewelViewer/);
+  assert.match(viewerRoute, /Fynd GlamAR/);
+  assert.match(viewerRoute, /showLoadingScreenLogo:\s*false/);
+  assert.match(viewerRoute, /showConfigurator:\s*true/);
+  assert.doesNotMatch(viewerRoute, /viewer-360-indicator/);
+  assert.match(viewerRoute, /costco-configurator-logo/);
+  assert.match(viewerRoute, /configurator-gear\.png/);
+  assert.match(viewerRoute, /img\.h-4\.h-full/);
+  assert.match(viewerRoute, /custom-configurator-native-icon/);
+  assert.doesNotMatch(viewerRoute, /costco-wholesale-logo-wide\.png/);
+  assert.match(viewerRoute, /data-costco-configurator/);
+  assert.match(viewerRoute, /replaceChildren\(buildConfiguratorLogo\(\)\)/);
+  assert.match(viewerRoute, /bundle\.nowebgi\.iife\.js/);
+  assert.match(viewerRoute, /bundle-0\.22\.0\.js/);
+  assert.doesNotMatch(viewerRoute, /Loading iJewel 3D viewer/);
+  assert.match(page, /src="ijewel-viewer\/"/);
+  assert.match(page, /name="details-tab"/);
+  assert.match(page, /useState<MetalKey>\("yellow"\)/);
+  assert.match(page, /const whiteGoldImages = \[/);
+  for (const imagePath of whiteGoldImagePaths) {
+    assert.match(page, new RegExp(imagePath.replace(/\./g, "\\.")));
+  }
+  assert.match(page, /Emerald Cut Diamond 14kt Ring[\s\S]*?costco-diamond-band-closeup\.png/);
+  assert.match(globals, /#details-tab-specifications:checked ~ \.details-panels \.specifications-panel/);
+  assert.match(globals, /\.thumb\.is-selected/);
+  assert.match(globals, /\.media-panel\.is-active/);
+  assert.match(globals, /\.details-panel\s*{\s*display: none;/);
+  assert.match(globals, /\.media-panel\s*{\s*display: none;/);
+  assert.match(globals, /\.product-card img\s*{[\s\S]*?object-fit: cover;/);
+  assert.doesNotMatch(globals, /\.product-card img\s*{[\s\S]*?padding: 8px;/);
+  assert.match(layout, /embedded iJewel 3D ring viewer/);
+  assert.doesNotMatch(packageJson, /"three"/);
+
+  await assert.rejects(access(new URL("../app/ModelViewer.tsx", import.meta.url)));
+  await assert.rejects(
+    access(new URL("public/assets/models/costco-3d-ring.glb", projectRoot)),
+  );
+});
