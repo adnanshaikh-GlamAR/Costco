@@ -630,10 +630,14 @@ function renderViewerDocument(payload: ReturnType<typeof buildViewerPayload>) {
 
       const configuratorLogoObserver = new MutationObserver(syncConfiguratorUi);
 
-      configuratorLogoObserver.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
+      const configuratorObserverRoot = document.body || document.getElementById("viewer-root");
+
+      if (configuratorObserverRoot) {
+        configuratorLogoObserver.observe(configuratorObserverRoot, {
+          childList: true,
+          subtree: true,
+        });
+      }
 
       window.addEventListener("webgi-viewer-ready", () => {
         statusEl.classList.add("is-hidden");

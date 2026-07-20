@@ -137,7 +137,7 @@ test("uses iJewel runtime assets instead of the removed custom model viewer", as
   assert.match(viewerRoute, /pointerup/);
   assert.match(viewerRoute, /composedPath/);
   assert.match(viewerRoute, /shadowRoot/);
-  assert.match(viewerRoute, /observe\(document\.body/);
+  assert.match(viewerRoute, /configuratorObserverRoot/);
   assert.match(viewerRoute, /costco:metal-change/);
   assert.match(viewerRoute, /silver/);
   assert.match(viewerRoute, /yellowgold/);
@@ -173,4 +173,25 @@ test("uses iJewel runtime assets instead of the removed custom model viewer", as
   await assert.rejects(
     access(new URL("public/assets/models/costco-3d-ring.glb", projectRoot)),
   );
+});
+
+test("prepares GitHub Pages HTML with valid relative module imports", async () => {
+  const { makePagesHtmlPortable } = await import("../scripts/build-gh-pages.mjs");
+  const html = [
+    '<link rel="stylesheet" href="/assets/index.css">',
+    '<script>import("assets/index.js")</script>',
+    "<script>import('assets/page.js')</script>",
+    "<script>import(`assets/chunk.js`)</script>",
+    '<img src="assets/brand/logo.png" alt="">',
+    '<script>const cdn = "https://assets.ijewel.design/v9/materialLibPro.json"</script>',
+  ].join("");
+  const portableHtml = makePagesHtmlPortable(html);
+
+  assert.match(portableHtml, /href="\.\/assets\/index\.css"/);
+  assert.match(portableHtml, /import\("\.\/assets\/index\.js"\)/);
+  assert.match(portableHtml, /import\('\.\/assets\/page\.js'\)/);
+  assert.match(portableHtml, /import\(`\.\/assets\/chunk\.js`\)/);
+  assert.match(portableHtml, /src="\.\/assets\/brand\/logo\.png"/);
+  assert.match(portableHtml, /https:\/\/assets\.ijewel\.design\/v9\/materialLibPro\.json/);
+  assert.doesNotMatch(portableHtml, /import\(["'`]assets\//);
 });
