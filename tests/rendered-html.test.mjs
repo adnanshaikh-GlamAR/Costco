@@ -65,9 +65,10 @@ test("server-renders the Costco PDP with the iJewel viewer iframe", async () => 
   assert.match(html, /media-panel media-panel-video/);
   assert.match(html, /media-panel media-panel-360/);
   assert.match(html, />3D TRY-ON</);
+  assert.match(html, />ADD TO CART</);
   assert.match(html, /aria-haspopup="dialog"/);
   assert.match(html, /glamar-tryon-sdk-container/);
-  assert.doesNotMatch(html, />Add to Cart</);
+  assert.doesNotMatch(html, />Add to List</);
   assert.doesNotMatch(html, /glamar-tryon-status/);
   assert.doesNotMatch(html, /Loading 3D try-on/);
   assert.doesNotMatch(html, /glamar-tryon-header/);

@@ -721,7 +721,7 @@ export default function Home() {
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M12 20.25S4.75 16 4.75 9.7A3.95 3.95 0 0 1 12 7.5a3.95 3.95 0 0 1 7.25 2.2C19.25 16 12 20.25 12 20.25Z" />
               </svg>
-              <span>Add to List</span>
+              <span>ADD TO CART</span>
             </button>
 
             <div className="delivery-card">
