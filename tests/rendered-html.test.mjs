@@ -67,6 +67,22 @@ test("server-renders the Costco PDP with the iJewel viewer iframe", async () => 
   assert.match(html, />3D TRY-ON</);
   assert.match(html, />ADD TO CART</);
   assert.match(html, /aria-haspopup="dialog"/);
+  assert.ok(
+    html.indexOf("Shipping &amp; Handling Included") <
+      html.indexOf(">3D TRY-ON<"),
+  );
+  assert.ok(
+    html.indexOf(">ADD TO CART<") <
+      html.indexOf('class="spec-grid"'),
+  );
+  assert.ok(
+    html.indexOf('class="spec-grid"') <
+      html.indexOf('aria-label="Metal options"'),
+  );
+  assert.ok(
+    html.indexOf('aria-label="Metal options"') <
+      html.indexOf('aria-label="Purchase options"'),
+  );
   assert.match(html, /glamar-tryon-sdk-container/);
   assert.doesNotMatch(html, />Add to List</);
   assert.doesNotMatch(html, /glamar-tryon-status/);

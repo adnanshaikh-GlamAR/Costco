@@ -670,6 +670,22 @@ export default function Home() {
             </p>
             <p className="price-note">Shipping & Handling Included</p>
 
+            <button
+              className="cart-button"
+              type="button"
+              aria-expanded={isTryOnOpen}
+              aria-haspopup="dialog"
+              onClick={handleTryOnClick}
+            >
+              3D TRY-ON
+            </button>
+            <button className="list-button" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 20.25S4.75 16 4.75 9.7A3.95 3.95 0 0 1 12 7.5a3.95 3.95 0 0 1 7.25 2.2C19.25 16 12 20.25 12 20.25Z" />
+              </svg>
+              <span>ADD TO CART</span>
+            </button>
+
             <div className="spec-grid">
               {productSpecs.map((spec) => (
                 <div key={spec.label}>
@@ -707,22 +723,6 @@ export default function Home() {
               <label htmlFor="quantity">Quantity</label>
               <input id="quantity" type="number" min="1" defaultValue="1" />
             </section>
-
-            <button
-              className="cart-button"
-              type="button"
-              aria-expanded={isTryOnOpen}
-              aria-haspopup="dialog"
-              onClick={handleTryOnClick}
-            >
-              3D TRY-ON
-            </button>
-            <button className="list-button" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M12 20.25S4.75 16 4.75 9.7A3.95 3.95 0 0 1 12 7.5a3.95 3.95 0 0 1 7.25 2.2C19.25 16 12 20.25 12 20.25Z" />
-              </svg>
-              <span>ADD TO CART</span>
-            </button>
 
             <div className="delivery-card">
               <strong>Arrives in 3-5 business days</strong>
