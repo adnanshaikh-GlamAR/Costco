@@ -232,3 +232,12 @@ test("prepares GitHub Pages HTML with valid relative module imports", async () =
   assert.match(portableHtml, /https:\/\/assets\.ijewel\.design\/v9\/materialLibPro\.json/);
   assert.doesNotMatch(portableHtml, /import\(["'`]assets\//);
 });
+
+test("configures Vercel to serve the generated static page output", async () => {
+  const vercelConfig = JSON.parse(
+    await readFile(new URL("../vercel.json", import.meta.url), "utf8"),
+  );
+
+  assert.equal(vercelConfig.buildCommand, "npm run build:pages -- dist/pages");
+  assert.equal(vercelConfig.outputDirectory, "dist/pages");
+});
