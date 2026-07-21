@@ -213,6 +213,12 @@ async function ensureGlamarInitialized() {
 
     glamar.init(GLAMAR_TRYON_CONTAINER_ID, GLAMAR_ACCESS_KEY, {
       platform: "web",
+      category: "jewellery",
+      configuration: {
+        global: {
+          openLiveOnInit: true,
+        },
+      },
     });
     window.__costcoGlamarInitialized = true;
     await loadedEvent;

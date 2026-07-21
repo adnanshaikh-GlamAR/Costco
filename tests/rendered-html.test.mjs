@@ -159,9 +159,13 @@ test("uses iJewel runtime assets instead of the removed custom model viewer", as
   assert.match(page, /GLAMAR_TRYON_CONTAINER_ID = "glamar-tryon-sdk-container"/);
   assert.match(page, /GLAMAR_TRYON_SKU = "00101001000111"/);
   assert.match(page, /platform: "web"/);
+  assert.match(page, /category: "jewellery"/);
+  assert.match(page, /openLiveOnInit: true/);
   assert.match(page, /glamar\.init\(GLAMAR_TRYON_CONTAINER_ID, GLAMAR_ACCESS_KEY/);
   assert.match(page, /glamar\.applyBySku\(GLAMAR_TRYON_SKU/);
   assert.match(page, /glamar\.open\(\)/);
+  assert.doesNotMatch(page, /glamar\.open\("modelViewer"/);
+  assert.doesNotMatch(page, /modelViewer/);
   assert.match(page, /name="details-tab"/);
   assert.match(page, /useState<MetalKey>\("yellow"\)/);
   assert.match(page, /useState<MediaKey>\("image-0"\)/);
