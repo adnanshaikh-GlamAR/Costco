@@ -11,6 +11,31 @@ const productSpecs = [
 
 type MetalKey = "yellow" | "white";
 type MediaKey = `image-${number}` | "video" | "360";
+type TryOnStatus = "idle" | "loading" | "ready" | "error";
+type GlamAREvent = string | { eventName?: unknown; name?: unknown; type?: unknown };
+type GlamAREventHandler = (event: GlamAREvent) => void;
+type GlamARApi = {
+  addEventListener: (eventName: string, handler: GlamAREventHandler) => void;
+  applyBySku: (skuId: string, callback?: (...args: unknown[]) => void) => void;
+  close?: () => void;
+  init: (containerId: string, accessKey: string, payload: { platform: "web"; [key: string]: unknown }) => void;
+  isLoaded?: () => boolean;
+  open: (mode?: string, imageUrl?: string) => void;
+  removeEventListener?: (eventName: string, handler: GlamAREventHandler) => void;
+};
+
+declare global {
+  interface Window {
+    GlamAR?: GlamARApi;
+    __costcoGlamarInitialized?: boolean;
+    __costcoGlamarScriptPromise?: Promise<GlamARApi>;
+  }
+}
+
+const GLAMAR_ACCESS_KEY = "a9b90ac7-218e-4ee9-b0ba-acb6487f803b";
+const GLAMAR_SDK_SRC = "https://cdn.glamar.io/sdk/wrapper";
+const GLAMAR_TRYON_CONTAINER_ID = "glamar-tryon-sdk-container";
+const GLAMAR_TRYON_SKU = "00101001000111";
 
 const metalOptions = [
   { key: "yellow" as const, name: "14kt Yellow Gold", className: "yellow" },
@@ -80,6 +105,140 @@ function getMediaForMetal(metal: MetalKey, currentMedia: MediaKey) {
   const currentIndex = Number(currentMedia.replace("image-", ""));
 
   return currentIndex < productImagesByMetal[metal].length ? currentMedia : "image-0";
+}
+
+function getGlamarEventName(event: GlamAREvent) {
+  if (typeof event === "string") {
+    return event;
+  }
+
+  if (!event || typeof event !== "object") {
+    return "";
+  }
+
+  for (const key of ["type", "eventName", "name"] as const) {
+    const value = event[key];
+
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function waitForGlamarEvent(glamar: GlamARApi, expectedEvent: string, timeoutMs = 5000) {
+  return new Promise<boolean>((resolve) => {
+    if (expectedEvent === "loaded" && glamar.isLoaded?.()) {
+      resolve(true);
+      return;
+    }
+
+    let isDone = false;
+    const finish = (didReceiveEvent: boolean) => {
+      if (isDone) {
+        return;
+      }
+
+      isDone = true;
+      window.clearTimeout(timeoutId);
+      glamar.removeEventListener?.("*", handler);
+      resolve(didReceiveEvent);
+    };
+    const handler: GlamAREventHandler = (event) => {
+      if (getGlamarEventName(event) === expectedEvent) {
+        finish(true);
+      }
+    };
+    const timeoutId = window.setTimeout(() => finish(false), timeoutMs);
+
+    glamar.addEventListener("*", handler);
+  });
+}
+
+function loadGlamarSdk() {
+  if (window.GlamAR) {
+    return Promise.resolve(window.GlamAR);
+  }
+
+  if (window.__costcoGlamarScriptPromise) {
+    return window.__costcoGlamarScriptPromise;
+  }
+
+  window.__costcoGlamarScriptPromise = new Promise<GlamARApi>((resolve, reject) => {
+    const resolveWithSdk = () => {
+      if (window.GlamAR) {
+        resolve(window.GlamAR);
+        return;
+      }
+
+      reject(new Error("GlamAR SDK loaded without exposing window.GlamAR."));
+    };
+
+    const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${GLAMAR_SDK_SRC}"]`);
+
+    if (existingScript) {
+      existingScript.addEventListener("load", resolveWithSdk, { once: true });
+      existingScript.addEventListener("error", () => reject(new Error("Unable to load the GlamAR SDK.")), {
+        once: true,
+      });
+
+      if (window.GlamAR) {
+        resolveWithSdk();
+      }
+
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = GLAMAR_SDK_SRC;
+    script.addEventListener("load", resolveWithSdk, { once: true });
+    script.addEventListener("error", () => reject(new Error("Unable to load the GlamAR SDK.")), { once: true });
+    document.head.append(script);
+  });
+
+  return window.__costcoGlamarScriptPromise;
+}
+
+async function ensureGlamarInitialized() {
+  const glamar = await loadGlamarSdk();
+  const container = document.getElementById(GLAMAR_TRYON_CONTAINER_ID);
+
+  if (!container) {
+    throw new Error("GlamAR try-on container is missing.");
+  }
+
+  if (!window.__costcoGlamarInitialized) {
+    const loadedEvent = waitForGlamarEvent(glamar, "loaded", 9000);
+
+    glamar.init(GLAMAR_TRYON_CONTAINER_ID, GLAMAR_ACCESS_KEY, {
+      platform: "web",
+    });
+    window.__costcoGlamarInitialized = true;
+    await loadedEvent;
+    return glamar;
+  }
+
+  if (!glamar.isLoaded?.()) {
+    await waitForGlamarEvent(glamar, "loaded", 1200);
+  }
+
+  return glamar;
+}
+
+async function applyGlamarTryOnSku(glamar: GlamARApi) {
+  const skuAppliedEvent = waitForGlamarEvent(glamar, "sku-applied", 3500);
+  let resolveSkuCallback = () => {};
+  const skuCallback = new Promise<void>((resolve) => {
+    resolveSkuCallback = resolve;
+  });
+  const fallbackDelay = new Promise<void>((resolve) => {
+    window.setTimeout(resolve, 2500);
+  });
+
+  glamar.applyBySku(GLAMAR_TRYON_SKU, resolveSkuCallback);
+  await Promise.race([skuAppliedEvent, skuCallback, fallbackDelay]);
 }
 
 const productVideo = {
@@ -281,6 +440,9 @@ function SpecIcon({ type }: { type: string }) {
 export default function Home() {
   const [selectedMetal, setSelectedMetal] = useState<MetalKey>("yellow");
   const [selectedMedia, setSelectedMedia] = useState<MediaKey>("image-0");
+  const [isTryOnOpen, setIsTryOnOpen] = useState(false);
+  const [tryOnMessage, setTryOnMessage] = useState("Preparing 3D try-on");
+  const [tryOnStatus, setTryOnStatus] = useState<TryOnStatus>("idle");
   const viewerFrameRef = useRef<HTMLIFrameElement>(null);
   const productImages = productImagesByMetal[selectedMetal];
   const selectedMetalLabel = metalOptions.find((metal) => metal.key === selectedMetal)?.name;
@@ -318,6 +480,54 @@ export default function Home() {
 
     return () => window.removeEventListener("message", handleViewerMessage);
   }, []);
+
+  useEffect(() => {
+    if (!isTryOnOpen) {
+      return undefined;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        handleTryOnClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isTryOnOpen]);
+
+  async function handleTryOnClick() {
+    if (tryOnStatus === "loading") {
+      return;
+    }
+
+    setIsTryOnOpen(true);
+    setTryOnStatus("loading");
+    setTryOnMessage("Loading 3D try-on");
+
+    try {
+      const glamar = await ensureGlamarInitialized();
+
+      setTryOnMessage("Applying diamond ring");
+      await applyGlamarTryOnSku(glamar);
+      setTryOnMessage("Opening camera");
+      glamar.open();
+      setTryOnStatus("ready");
+      setTryOnMessage("3D try-on ready");
+    } catch (error) {
+      console.error("GlamAR try-on failed", error);
+      setTryOnStatus("error");
+      setTryOnMessage("3D try-on could not load. Please try again.");
+    }
+  }
+
+  function handleTryOnClose() {
+    window.GlamAR?.close?.();
+    setIsTryOnOpen(false);
+    setTryOnStatus("idle");
+    setTryOnMessage("Preparing 3D try-on");
+  }
 
   return (
     <main className="site-shell">
@@ -504,7 +714,15 @@ export default function Home() {
               <input id="quantity" type="number" min="1" defaultValue="1" />
             </section>
 
-            <button className="cart-button" type="button">Add to Cart</button>
+            <button
+              className="cart-button"
+              type="button"
+              aria-expanded={isTryOnOpen}
+              aria-haspopup="dialog"
+              onClick={handleTryOnClick}
+            >
+              3D TRY-ON
+            </button>
             <button className="list-button" type="button">
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M12 20.25S4.75 16 4.75 9.7A3.95 3.95 0 0 1 12 7.5a3.95 3.95 0 0 1 7.25 2.2C19.25 16 12 20.25 12 20.25Z" />
@@ -688,6 +906,42 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <div
+        className={`glamar-tryon-modal${isTryOnOpen ? " is-open" : ""}`}
+        role="dialog"
+        aria-modal={isTryOnOpen}
+        aria-hidden={!isTryOnOpen}
+        aria-labelledby="glamar-tryon-title"
+      >
+        <div className="glamar-tryon-card">
+          <div className="glamar-tryon-header">
+            <div>
+              <span>Fynd GlamAR</span>
+              <h2 id="glamar-tryon-title">3D Try-On</h2>
+            </div>
+            <button
+              type="button"
+              className="glamar-tryon-close"
+              aria-label="Close 3D try-on"
+              onClick={handleTryOnClose}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5" />
+              </svg>
+            </button>
+          </div>
+          <div className="glamar-tryon-body">
+            <div id={GLAMAR_TRYON_CONTAINER_ID} className="glamar-tryon-frame" />
+            {tryOnStatus !== "ready" ? (
+              <div className={`glamar-tryon-status ${tryOnStatus}`} role="status">
+                <span aria-hidden="true" />
+                <p>{tryOnMessage}</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
 
       <footer className="footer">
         <div>

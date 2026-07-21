@@ -628,6 +628,154 @@ input:focus-visible {
   line-height: 1.5;
 }
 
+.glamar-tryon-modal {
+  align-items: center;
+  background: rgba(7, 26, 51, 0.62);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  opacity: 0;
+  padding: 24px;
+  pointer-events: none;
+  position: fixed;
+  transition: opacity 180ms ease, visibility 180ms ease;
+  visibility: hidden;
+  z-index: 90;
+}
+
+.glamar-tryon-modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.glamar-tryon-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 30px 90px rgba(7, 26, 51, 0.28);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: min(760px, 88vh);
+  max-width: 980px;
+  overflow: hidden;
+  width: min(980px, 100%);
+}
+
+.glamar-tryon-header {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  padding: 18px 22px;
+}
+
+.glamar-tryon-header span {
+  color: var(--costco-blue);
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.glamar-tryon-header h2 {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.glamar-tryon-close {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  padding: 0;
+  width: 42px;
+}
+
+.glamar-tryon-close:hover {
+  border-color: #b9c9dc;
+  color: var(--costco-blue);
+}
+
+.glamar-tryon-close svg {
+  fill: none;
+  height: 22px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.9;
+  width: 22px;
+}
+
+.glamar-tryon-body {
+  background: #f7f9fc;
+  min-height: 0;
+  position: relative;
+}
+
+.glamar-tryon-frame {
+  height: 100%;
+  min-height: 520px;
+  width: 100%;
+}
+
+.glamar-tryon-frame canvas,
+.glamar-tryon-frame iframe,
+.glamar-tryon-frame video {
+  height: 100%;
+  width: 100%;
+}
+
+.glamar-tryon-status {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 14px 36px rgba(7, 26, 51, 0.12);
+  color: var(--ink);
+  display: flex;
+  gap: 12px;
+  left: 50%;
+  padding: 12px 18px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.glamar-tryon-status span {
+  animation: glamar-tryon-spin 860ms linear infinite;
+  border: 2px solid #d7e4f2;
+  border-top-color: var(--costco-blue);
+  border-radius: 50%;
+  height: 22px;
+  width: 22px;
+}
+
+.glamar-tryon-status.error span {
+  animation: none;
+  border-color: var(--costco-red);
+}
+
+.glamar-tryon-status p {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0;
+}
+
+@keyframes glamar-tryon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .purchase-panel > * {
   padding-left: 18px;
   padding-right: 18px;
@@ -1125,6 +1273,18 @@ input:focus-visible {
   .model-viewer-shell {
     height: 430px;
     min-height: 430px;
+  }
+
+  .glamar-tryon-modal {
+    padding: 12px;
+  }
+
+  .glamar-tryon-card {
+    height: 90vh;
+  }
+
+  .glamar-tryon-frame {
+    min-height: 420px;
   }
 
   .purchase-panel h1 {

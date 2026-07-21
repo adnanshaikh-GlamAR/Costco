@@ -64,6 +64,10 @@ test("server-renders the Costco PDP with the iJewel viewer iframe", async () => 
   assert.match(html, /media-panel media-panel-image-0 is-active/);
   assert.match(html, /media-panel media-panel-video/);
   assert.match(html, /media-panel media-panel-360/);
+  assert.match(html, />3D TRY-ON</);
+  assert.match(html, /aria-haspopup="dialog"/);
+  assert.match(html, /glamar-tryon-sdk-container/);
+  assert.doesNotMatch(html, />Add to Cart</);
   assert.doesNotMatch(html, /media-panel media-panel-360 is-active/);
   for (const imagePath of pdpImagePaths) {
     assert.match(html, new RegExp(imagePath.replace(/\./g, "\\.")));
@@ -146,6 +150,13 @@ test("uses iJewel runtime assets instead of the removed custom model viewer", as
   assert.doesNotMatch(viewerRoute, /Loading iJewel 3D viewer/);
   assert.doesNotMatch(viewerRoute, /glamar-loader__mark/);
   assert.match(page, /src="ijewel-viewer\/"/);
+  assert.match(page, /https:\/\/cdn\.glamar\.io\/sdk\/wrapper/);
+  assert.match(page, /GLAMAR_TRYON_CONTAINER_ID = "glamar-tryon-sdk-container"/);
+  assert.match(page, /GLAMAR_TRYON_SKU = "00101001000111"/);
+  assert.match(page, /platform: "web"/);
+  assert.match(page, /glamar\.init\(GLAMAR_TRYON_CONTAINER_ID, GLAMAR_ACCESS_KEY/);
+  assert.match(page, /glamar\.applyBySku\(GLAMAR_TRYON_SKU/);
+  assert.match(page, /glamar\.open\(\)/);
   assert.match(page, /name="details-tab"/);
   assert.match(page, /useState<MetalKey>\("yellow"\)/);
   assert.match(page, /useState<MediaKey>\("image-0"\)/);
