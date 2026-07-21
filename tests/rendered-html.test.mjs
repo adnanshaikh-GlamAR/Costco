@@ -181,6 +181,12 @@ test("uses iJewel runtime assets instead of the removed custom model viewer", as
   assert.match(page, /glamar\.init\(GLAMAR_TRYON_CONTAINER_ID, GLAMAR_ACCESS_KEY/);
   assert.match(page, /glamar\.applyBySku\(GLAMAR_TRYON_SKU/);
   assert.match(page, /glamar\.open\(\)/);
+  assert.match(page, /SDK_QUIT_CONFIRM_LABEL = "yes, close"/);
+  assert.match(page, /bindGlamarCloseSync/);
+  assert.match(page, /addEventListener\("closed", glamarCloseHandler\)/);
+  assert.match(page, /isGlamarEvent\(event, "closed"\)/);
+  assert.match(page, /handleSdkQuitConfirmClick/);
+  assert.match(page, /window\.GlamAR\?\.close\?\.\(\)/);
   assert.doesNotMatch(page, /glamar\.open\("modelViewer"/);
   assert.doesNotMatch(page, /modelViewer/);
   assert.match(page, /name="details-tab"/);

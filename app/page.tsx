@@ -35,6 +35,7 @@ const GLAMAR_ACCESS_KEY = "a9b90ac7-218e-4ee9-b0ba-acb6487f803b";
 const GLAMAR_SDK_SRC = "https://cdn.glamar.io/sdk/wrapper";
 const GLAMAR_TRYON_CONTAINER_ID = "glamar-tryon-sdk-container";
 const GLAMAR_TRYON_SKU = "00101001000111";
+const SDK_QUIT_CONFIRM_LABEL = "yes, close";
 
 const metalOptions = [
   { key: "yellow" as const, name: "14kt Yellow Gold", className: "yellow" },
@@ -106,24 +107,23 @@ function getMediaForMetal(metal: MetalKey, currentMedia: MediaKey) {
   return currentIndex < productImagesByMetal[metal].length ? currentMedia : "image-0";
 }
 
-function getGlamarEventName(event: GlamAREvent) {
+function getGlamarEventNames(event: GlamAREvent) {
   if (typeof event === "string") {
-    return event;
+    return [event];
   }
 
   if (!event || typeof event !== "object") {
-    return "";
+    return [];
   }
 
-  for (const key of ["type", "eventName", "name"] as const) {
+  return (["eventName", "name", "type"] as const).flatMap((key) => {
     const value = event[key];
+    return typeof value === "string" ? [value] : [];
+  });
+}
 
-    if (typeof value === "string") {
-      return value;
-    }
-  }
-
-  return "";
+function isGlamarEvent(event: GlamAREvent, expectedEvent: string) {
+  return getGlamarEventNames(event).includes(expectedEvent);
 }
 
 function waitForGlamarEvent(glamar: GlamARApi, expectedEvent: string, timeoutMs = 5000) {
@@ -145,7 +145,7 @@ function waitForGlamarEvent(glamar: GlamARApi, expectedEvent: string, timeoutMs 
       resolve(didReceiveEvent);
     };
     const handler: GlamAREventHandler = (event) => {
-      if (getGlamarEventName(event) === expectedEvent) {
+      if (isGlamarEvent(event, expectedEvent)) {
         finish(true);
       }
     };
@@ -446,6 +446,7 @@ export default function Home() {
   const [selectedMetal, setSelectedMetal] = useState<MetalKey>("yellow");
   const [selectedMedia, setSelectedMedia] = useState<MediaKey>("image-0");
   const [isTryOnOpen, setIsTryOnOpen] = useState(false);
+  const glamarCloseHandlerRef = useRef<GlamAREventHandler | null>(null);
   const viewerFrameRef = useRef<HTMLIFrameElement>(null);
   const productImages = productImagesByMetal[selectedMetal];
   const selectedMetalLabel = metalOptions.find((metal) => metal.key === selectedMetal)?.name;
@@ -485,8 +486,42 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      const glamarCloseHandler = glamarCloseHandlerRef.current;
+
+      if (!glamarCloseHandler) {
+        return;
+      }
+
+      window.GlamAR?.removeEventListener?.("closed", glamarCloseHandler);
+      window.GlamAR?.removeEventListener?.("*", glamarCloseHandler);
+      glamarCloseHandlerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isTryOnOpen) {
       return undefined;
+    }
+
+    function handleSdkQuitConfirmClick(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const action = target.closest("button,[role='button']");
+      const actionText = action?.textContent?.replace(/\s+/g, " ").trim().toLowerCase();
+
+      if (actionText !== SDK_QUIT_CONFIRM_LABEL) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        window.GlamAR?.close?.();
+        setIsTryOnOpen(false);
+      }, 150);
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -495,10 +530,30 @@ export default function Home() {
       }
     }
 
+    document.addEventListener("click", handleSdkQuitConfirmClick, true);
     window.addEventListener("keydown", handleKeyDown);
 
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("click", handleSdkQuitConfirmClick, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isTryOnOpen]);
+
+  function bindGlamarCloseSync(glamar: GlamARApi) {
+    if (glamarCloseHandlerRef.current) {
+      return;
+    }
+
+    const glamarCloseHandler: GlamAREventHandler = (event) => {
+      if (isGlamarEvent(event, "closed")) {
+        setIsTryOnOpen(false);
+      }
+    };
+
+    glamarCloseHandlerRef.current = glamarCloseHandler;
+    glamar.addEventListener("closed", glamarCloseHandler);
+    glamar.addEventListener("*", glamarCloseHandler);
+  }
 
   async function handleTryOnClick() {
     if (isTryOnOpen) {
@@ -510,6 +565,7 @@ export default function Home() {
     try {
       const glamar = await ensureGlamarInitialized();
 
+      bindGlamarCloseSync(glamar);
       await applyGlamarTryOnSku(glamar);
       glamar.open();
     } catch (error) {
