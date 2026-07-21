@@ -734,48 +734,6 @@ input:focus-visible {
   width: 100%;
 }
 
-.glamar-tryon-status {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  box-shadow: 0 14px 36px rgba(7, 26, 51, 0.12);
-  color: var(--ink);
-  display: flex;
-  gap: 12px;
-  left: 50%;
-  padding: 12px 18px;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.glamar-tryon-status span {
-  animation: glamar-tryon-spin 860ms linear infinite;
-  border: 2px solid #d7e4f2;
-  border-top-color: var(--costco-blue);
-  border-radius: 50%;
-  height: 22px;
-  width: 22px;
-}
-
-.glamar-tryon-status.error span {
-  animation: none;
-  border-color: var(--costco-red);
-}
-
-.glamar-tryon-status p {
-  font-size: 14px;
-  font-weight: 800;
-  margin: 0;
-}
-
-@keyframes glamar-tryon-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .purchase-panel > * {
   padding-left: 18px;
   padding-right: 18px;

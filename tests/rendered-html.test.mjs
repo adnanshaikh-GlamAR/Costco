@@ -68,6 +68,8 @@ test("server-renders the Costco PDP with the iJewel viewer iframe", async () => 
   assert.match(html, /aria-haspopup="dialog"/);
   assert.match(html, /glamar-tryon-sdk-container/);
   assert.doesNotMatch(html, />Add to Cart</);
+  assert.doesNotMatch(html, /glamar-tryon-status/);
+  assert.doesNotMatch(html, /Loading 3D try-on/);
   assert.doesNotMatch(html, /media-panel media-panel-360 is-active/);
   for (const imagePath of pdpImagePaths) {
     assert.match(html, new RegExp(imagePath.replace(/\./g, "\\.")));

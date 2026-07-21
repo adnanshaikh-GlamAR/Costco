@@ -11,7 +11,6 @@ const productSpecs = [
 
 type MetalKey = "yellow" | "white";
 type MediaKey = `image-${number}` | "video" | "360";
-type TryOnStatus = "idle" | "loading" | "ready" | "error";
 type GlamAREvent = string | { eventName?: unknown; name?: unknown; type?: unknown };
 type GlamAREventHandler = (event: GlamAREvent) => void;
 type GlamARApi = {
@@ -441,8 +440,6 @@ export default function Home() {
   const [selectedMetal, setSelectedMetal] = useState<MetalKey>("yellow");
   const [selectedMedia, setSelectedMedia] = useState<MediaKey>("image-0");
   const [isTryOnOpen, setIsTryOnOpen] = useState(false);
-  const [tryOnMessage, setTryOnMessage] = useState("Preparing 3D try-on");
-  const [tryOnStatus, setTryOnStatus] = useState<TryOnStatus>("idle");
   const viewerFrameRef = useRef<HTMLIFrameElement>(null);
   const productImages = productImagesByMetal[selectedMetal];
   const selectedMetalLabel = metalOptions.find((metal) => metal.key === selectedMetal)?.name;
@@ -498,35 +495,26 @@ export default function Home() {
   }, [isTryOnOpen]);
 
   async function handleTryOnClick() {
-    if (tryOnStatus === "loading") {
+    if (isTryOnOpen) {
       return;
     }
 
     setIsTryOnOpen(true);
-    setTryOnStatus("loading");
-    setTryOnMessage("Loading 3D try-on");
 
     try {
       const glamar = await ensureGlamarInitialized();
 
-      setTryOnMessage("Applying diamond ring");
       await applyGlamarTryOnSku(glamar);
-      setTryOnMessage("Opening camera");
       glamar.open();
-      setTryOnStatus("ready");
-      setTryOnMessage("3D try-on ready");
     } catch (error) {
       console.error("GlamAR try-on failed", error);
-      setTryOnStatus("error");
-      setTryOnMessage("3D try-on could not load. Please try again.");
+      setIsTryOnOpen(false);
     }
   }
 
   function handleTryOnClose() {
     window.GlamAR?.close?.();
     setIsTryOnOpen(false);
-    setTryOnStatus("idle");
-    setTryOnMessage("Preparing 3D try-on");
   }
 
   return (
@@ -933,12 +921,6 @@ export default function Home() {
           </div>
           <div className="glamar-tryon-body">
             <div id={GLAMAR_TRYON_CONTAINER_ID} className="glamar-tryon-frame" />
-            {tryOnStatus !== "ready" ? (
-              <div className={`glamar-tryon-status ${tryOnStatus}`} role="status">
-                <span aria-hidden="true" />
-                <p>{tryOnMessage}</p>
-              </div>
-            ) : null}
           </div>
         </div>
       </div>
