@@ -900,25 +900,9 @@ export default function Home() {
         role="dialog"
         aria-modal={isTryOnOpen}
         aria-hidden={!isTryOnOpen}
-        aria-labelledby="glamar-tryon-title"
+        aria-label="3D try-on"
       >
         <div className="glamar-tryon-card">
-          <div className="glamar-tryon-header">
-            <div>
-              <span>Fynd GlamAR</span>
-              <h2 id="glamar-tryon-title">3D Try-On</h2>
-            </div>
-            <button
-              type="button"
-              className="glamar-tryon-close"
-              aria-label="Close 3D try-on"
-              onClick={handleTryOnClose}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5" />
-              </svg>
-            </button>
-          </div>
           <div className="glamar-tryon-body">
             <div id={GLAMAR_TRYON_CONTAINER_ID} className="glamar-tryon-frame" />
           </div>
